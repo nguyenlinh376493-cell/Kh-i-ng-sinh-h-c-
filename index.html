@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trò Chơi Khởi Động - Sinh Học 11: Dinh Dưỡng & Tiêu Hóa</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Be Vietnam Pro & Nunito (Chuẩn Tiếng Việt) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Be Vietnam Pro', 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 50%, #fef3c7 100%);
+            min-height: 100vh;
+            color: #0f172a;
+        }
+
+        .font-heading {
+            font-family: 'Nunito', 'Be Vietnam Pro', sans-serif;
+        }
+
+        /* Modern Bright Glass Card */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 20px 40px -15px rgba(14, 165, 233, 0.15), 0 0 15px rgba(0, 0, 0, 0.03);
+        }
+
+        .option-btn {
+            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .option-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            border-color: #38bdf8;
+            background-color: #f0f9ff;
+            box-shadow: 0 8px 20px -4px rgba(56, 189, 248, 0.25);
+        }
+
+        /* SVG Animations */
+        @keyframes float-gentle {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-7px) rotate(1deg); }
+        }
+        .animate-float {
+            animation: float-gentle 3.2s ease-in-out infinite;
+        }
+
+        @keyframes wiggle-tail {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(12deg); }
+        }
+        .animate-wiggle {
+            transform-origin: bottom center;
+            animation: wiggle-tail 1.5s ease-in-out infinite;
+        }
+
+        @keyframes blink-eye {
+            0%, 90%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+        }
+        .animate-blink {
+            transform-origin: center;
+            animation: blink-eye 4s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.08); }
+        }
+        .animate-pulse-glow {
+            animation: pulse-glow 2.5s ease-in-out infinite;
+        }
+
+        @keyframes shake-err {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .shake-err {
+            animation: shake-err 0.45s ease-in-out;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen justify-between p-3 md:p-6 relative overflow-x-hidden selection:bg-sky-200">
+
+    <!-- Top Navigation / Header -->
+    <header class="w-full max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3 mb-3 p-3.5 md:p-4 rounded-2xl glass-card">
+        <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-400 to-emerald-400 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-sky-400/30">
+                🌱
+            </div>
+            <div>
+                <span class="text-[11px] font-extrabold text-sky-600 uppercase tracking-wider block">Sinh Học 11 • Thuyết Trình</span>
+                <h1 class="font-heading text-base md:text-lg font-black text-slate-800">
+                    Dinh Dưỡng & Tiêu Hóa Ở Động Vật & Con Người
+                </h1>
+            </div>
+        </div>
+
+        <!-- Music & Timer Controls -->
+        <div class="flex items-center gap-3">
+            <div class="px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono font-bold text-slate-700 flex items-center gap-2">
+                <i class="fa-regular fa-clock text-amber-500 animate-pulse"></i>
+                <span id="timerText">00:00</span>
+            </div>
+
+            <!-- Sound Controller -->
+            <div class="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                <button id="bgmToggleBtn" onclick="toggleBGM()" class="text-slate-600 hover:text-sky-600 text-sm transition focus:outline-none" title="Tắt/Mở Nhạc">
+                    <i id="bgmIcon" class="fa-solid fa-volume-xmark text-slate-400"></i>
+                </button>
+                <input id="volumeSlider" type="range" min="0" max="1" step="0.05" value="0.35" oninput="changeVolume(this.value)" class="w-16 h-1.5 accent-sky-500 cursor-pointer">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Card Container -->
+    <main class="w-full max-w-5xl mx-auto glass-card rounded-3xl p-4 md:p-8 flex-1 flex flex-col justify-between my-auto relative overflow-hidden">
+
+        <!-- INTRO SCREEN -->
+        <div id="introScreen" class="flex flex-col items-center justify-center text-center my-auto py-6 z-20">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-100 border border-sky-300 text-sky-700 text-xs md:text-sm font-extrabold mb-4 animate-bounce shadow-sm">
+                ⚡ KHỞI ĐỘNG THÔNG HỂU - VỪA SỨC THPT!
+            </div>
+
+            <h1 class="font-heading text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-600 via-teal-600 to-emerald-600 mb-3 leading-tight drop-shadow-sm">
+                TRÒ CHƠI KHỞI ĐỘNG
+            </h1>
+
+            <p class="text-sm md:text-base text-slate-600 font-semibold max-w-lg mb-8 leading-relaxed">
+                Môn: <span class="text-sky-600 font-bold">Sinh Học 11</span> • Chủ đề: <span class="text-emerald-600 font-bold">Dinh dưỡng & Tiêu hóa</span><br>
+                Cùng chinh phục 7 câu hỏi Mức độ Khá (Vận dụng nhẹ kiến thức Động vật & Con người) để chuẩn bị tốt nhất cho bài thuyết trình nhé!
+            </p>
+
+            <!-- Mascot SVG (Cute Cow & Human Energy Mascot) -->
+            <div class="w-48 h-48 mb-8 animate-float flex items-center justify-center">
+                <svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-xl">
+                    <circle cx="100" cy="100" r="85" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="4"/>
+                    <!-- Cute Mascot Assembly -->
+                    <g transform="translate(25, 25)">
+                        <!-- Ears -->
+                        <path d="M 30 65 Q 10 50, 35 40 Z" fill="#334155"/>
+                        <path d="M 120 65 Q 140 50, 115 40 Z" fill="#334155"/>
+                        <!-- Horns -->
+                        <path d="M 45 40 Q 40 20, 55 30 Z" fill="#f59e0b"/>
+                        <path d="M 105 40 Q 110 20, 95 30 Z" fill="#f59e0b"/>
+                        <!-- Head -->
+                        <ellipse cx="75" cy="70" rx="45" ry="35" fill="#ffffff" stroke="#e2e8f0" stroke-width="3"/>
+                        <!-- Black spots -->
+                        <path d="M 40 50 Q 55 45, 50 65 Z" fill="#334155"/>
+                        <path d="M 100 55 Q 115 65, 105 80 Z" fill="#334155"/>
+                        <!-- Eyes -->
+                        <circle cx="58" cy="65" r="5" fill="#0f172a" class="animate-blink"/>
+                        <circle cx="92" cy="65" r="5" fill="#0f172a" class="animate-blink"/>
+                        <circle cx="60" cy="63" r="2" fill="#ffffff"/>
+                        <circle cx="94" cy="63" r="2" fill="#ffffff"/>
+                        <!-- Snout -->
+                        <ellipse cx="75" cy="85" rx="25" ry="16" fill="#fbcfe8"/>
+                        <circle cx="67" cy="85" r="3" fill="#f43f5e"/>
+                        <circle cx="83" cy="85" r="3" fill="#f43f5e"/>
+                    </g>
+                </svg>
+            </div>
+
+            <button onclick="startGame()" class="px-10 py-4 bg-gradient-to-r from-sky-500 via-teal-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 text-white font-heading font-black text-base md:text-lg rounded-2xl shadow-xl shadow-sky-500/30 transform hover:scale-105 transition-all flex items-center gap-3 cursor-pointer">
+                <span>BẮT ĐẦU CHƠI</span>
+                <i class="fa-solid fa-play"></i>
+            </button>
+        </div>
+
+        <!-- QUIZ PLAYING SCREEN -->
+        <div id="quizScreen" class="hidden flex-col justify-between flex-1">
+            <!-- Progress Bar & Score -->
+            <div>
+                <div class="flex justify-between items-center mb-2 px-1">
+                    <span class="font-heading font-extrabold text-xs md:text-sm text-sky-600 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-gamepad"></i> Câu hỏi <span id="currentQNum">1</span> / 7
+                    </span>
+                    <span class="bg-amber-100 text-amber-800 text-xs font-black px-3 py-1 rounded-full border border-amber-300 flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-star text-amber-500"></i>
+                        Điểm: <span id="scoreText">0</span>
+                    </span>
+                </div>
+
+                <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200">
+                    <div id="progressBar" class="bg-gradient-to-r from-sky-400 via-teal-400 to-emerald-400 h-full rounded-full transition-all duration-500 ease-out" style="width: 14.28%;"></div>
+                </div>
+            </div>
+
+            <!-- Middle Layout: SVG Illustration + Question -->
+            <div class="my-4 grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
+                <!-- SVG Illustration Area (100% CLEAN NO TEXT/ANSWERS) -->
+                <div class="md:col-span-5 flex flex-col items-center justify-center bg-gradient-to-b from-sky-50 to-indigo-50 rounded-2xl p-4 border border-sky-100 relative overflow-hidden group shadow-inner">
+                    <div id="svgContainer" class="w-full h-48 flex items-center justify-center animate-float z-10">
+                        <!-- SVG graphic will be rendered dynamically -->
+                    </div>
+
+                    <div id="svgCaption" class="mt-2 text-[11px] font-bold text-sky-700 text-center bg-white/90 px-3 py-1 rounded-full border border-sky-200 shadow-sm z-10">
+                        Hình ảnh minh họa
+                    </div>
+                </div>
+
+                <!-- Question & Options List -->
+                <div class="md:col-span-7 flex flex-col justify-between">
+                    <div>
+                        <span id="levelBadge" class="inline-block px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-100 rounded-lg border border-emerald-300 mb-2">
+                            Mức Độ Khá • THPT 💡
+                        </span>
+                        <h2 id="questionText" class="font-heading text-base md:text-lg font-black text-slate-800 leading-snug mb-3">
+                            Đang tải câu hỏi...
+                        </h2>
+                    </div>
+
+                    <div id="optionsContainer" class="space-y-2.5 my-2">
+                        <!-- Dynamic Option Buttons -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom: Feedback Box & Action Button -->
+            <div id="feedbackBox" class="p-3.5 md:p-4 rounded-2xl bg-slate-50 border border-slate-200 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div class="flex items-start gap-3 flex-1">
+                    <div id="feedbackIcon" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg text-slate-500 bg-slate-200 shrink-0 mt-0.5 sm:mt-0 shadow-sm">
+                        <i class="fa-solid fa-lightbulb"></i>
+                    </div>
+                    <div>
+                        <p id="feedbackTitle" class="font-extrabold text-sm text-slate-700">Chọn 1 đáp án đúng để mở nút tiếp tục!</p>
+                        <p id="feedbackDesc" class="text-xs text-slate-500 font-medium leading-relaxed mt-0.5">Hãy vận dụng kiến thức Sinh 11 để suy luận câu trả lời đúng nhé.</p>
+                    </div>
+                </div>
+
+                <button id="nextBtn" onclick="nextQuestion()" disabled class="w-full sm:w-auto px-6 py-2.5 bg-slate-200 text-slate-400 font-black text-sm rounded-xl transition-all flex items-center justify-center gap-2 cursor-not-allowed shrink-0 border border-slate-300">
+                    <span>CÂU TIẾP THEO</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- WIN OVERLAY SCREEN -->
+        <div id="winScreen" class="absolute inset-0 bg-white/95 backdrop-blur-xl rounded-3xl flex flex-col items-center justify-center p-6 text-center z-30 hidden border border-slate-200">
+            <div class="w-20 h-20 bg-gradient-to-tr from-amber-400 to-emerald-400 text-white rounded-2xl flex items-center justify-center text-4xl mb-4 shadow-xl shadow-amber-400/30 font-black animate-bounce">
+                🏆
+            </div>
+            <h2 class="font-heading text-2xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-600 via-teal-600 to-emerald-600 mb-2">
+                KHỞI ĐỘNG THÀNH CÔNG!
+            </h2>
+            <p class="text-xs md:text-sm text-slate-600 font-bold max-w-md mb-6 leading-relaxed">
+                Cả lớp đã xuất sắc hoàn thành 7 câu hỏi mức độ khá và sẵn sàng 100% tinh thần bước vào <span class="text-sky-600">Bài Thuyết Trình Sinh Học 11</span>!
+            </p>
+
+            <div class="grid grid-cols-2 gap-4 w-full max-w-xs mb-6">
+                <div class="bg-sky-50 rounded-2xl p-3.5 border border-sky-200 text-center">
+                    <p class="text-[10px] text-sky-600 uppercase font-bold tracking-wider mb-1">Điểm Hoàn Thành</p>
+                    <p class="font-heading text-2xl font-black text-emerald-600">700/700</p>
+                </div>
+                <div class="bg-emerald-50 rounded-2xl p-3.5 border border-emerald-200 text-center">
+                    <p class="text-[10px] text-emerald-600 uppercase font-bold tracking-wider mb-1">Thời Gian</p>
+                    <p id="finalTimeText" class="font-heading text-2xl font-black text-sky-600">00:00</p>
+                </div>
+            </div>
+
+            <button onclick="restartQuiz()" class="px-8 py-3.5 bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-lg shadow-sky-500/25 transform hover:-translate-y-1 transition-all flex items-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>Chơi Lại Trò Chơi</span>
+            </button>
+        </div>
+
+    </main>
+
+    <footer class="mt-3 text-center text-xs text-slate-500 font-bold">
+        Sinh Học 11 • Bài 8: Dinh dưỡng & Tiêu hóa ở động vật & Con người
+    </footer>
+
+    <!-- Game Script Logic -->
+    <script>
+        // WEB AUDIO API (Chill Lo-fi Synthesizer)
+        let audioCtx = null;
+        let isBgmPlaying = false;
+        let bgmVolume = 0.35;
+        let bgmInterval = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        const warmChords = [
+            [261.63, 329.63, 392.00, 523.25], // Cmaj
+            [220.00, 261.63, 329.63, 440.00], // Am
+            [174.61, 220.00, 261.63, 349.23], // F
+            [196.00, 246.94, 293.66, 392.00]  // G
+        ];
+        let chordIdx = 0;
+
+        function playChillPad() {
+            if (!isBgmPlaying || !audioCtx) return;
+
+            const chord = warmChords[chordIdx];
+            chordIdx = (chordIdx + 1) % warmChords.length;
+
+            const now = audioCtx.currentTime;
+
+            chord.forEach(freq => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now);
+
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.035 * bgmVolume, now + 1.0);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 3.3);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start(now);
+                osc.stop(now + 3.4);
+            });
+
+            // Arpeggio Accent Note
+            const arpOsc = audioCtx.createOscillator();
+            const arpGain = audioCtx.createGain();
+            arpOsc.type = 'triangle';
+            arpOsc.frequency.setValueAtTime(chord[Math.floor(Math.random() * chord.length)] * 2, now + 0.5);
+            arpGain.gain.setValueAtTime(0, now + 0.5);
+            arpGain.gain.linearRampToValueAtTime(0.04 * bgmVolume, now + 0.6);
+            arpGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+
+            arpOsc.connect(arpGain);
+            arpGain.connect(audioCtx.destination);
+
+            arpOsc.start(now + 0.5);
+            arpOsc.stop(now + 1.3);
+        }
+
+        function startBGM() {
+            initAudio();
+            if (isBgmPlaying) return;
+            isBgmPlaying = true;
+            playChillPad();
+            bgmInterval = setInterval(playChillPad, 3300);
+            document.getElementById('bgmIcon').className = 'fa-solid fa-volume-high text-sky-600';
+        }
+
+        function stopBGM() {
+            isBgmPlaying = false;
+            if (bgmInterval) clearInterval(bgmInterval);
+            document.getElementById('bgmIcon').className = 'fa-solid fa-volume-xmark text-slate-400';
+        }
+
+        function toggleBGM() {
+            if (isBgmPlaying) stopBGM();
+            else startBGM();
+        }
+
+        function changeVolume(val) {
+            bgmVolume = parseFloat(val);
+        }
+
+        // SFX Playback
+        function playSFX(type) {
+            if (!audioCtx) return;
+            initAudio();
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'correct') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.08); // E5
+                osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.18); // G5
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(120, now + 0.2);
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'win') {
+                const freqs = [523.25, 659.25, 783.99, 1046.50];
+                freqs.forEach((f, i) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.frequency.value = f;
+                    const t = now + i * 0.1;
+                    g.gain.setValueAtTime(0.18, t);
+                    g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+                    o.start(t);
+                    o.stop(t + 0.3);
+                });
+            }
+        }
+
+        // Timer
+        let timerSeconds = 0;
+        let timerInterval = null;
+
+        function startTimer() {
+            timerSeconds = 0;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timerSeconds++;
+                const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+                const secs = (timerSeconds % 60).toString().padStart(2, '0');
+                document.getElementById('timerText').innerText = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        // 7 CÂU HỎI MỨC ĐỘ KHÁ (THÔNG HỂU/VẬN DỤNG DÀNH CHO THPT)
+        // HOÀN TOÀN TỰ NHIÊN, SVG HOẠT HÌNH KHÔNG CHỨA CHỮ ĐÁP ÁN
+        const quizData = [
+            {
+                id: 1,
+                question: "1. Thức ăn của bò chủ yếu là cỏ giàu cellulose (nghèo protein). Vì sao cơ thể bò vẫn phát triển lực lưỡng và cung cấp lượng đạm (protein) rất dồi dào?",
+                options: [
+                    "Bò tự tổng hợp được amino acid trực tiếp từ nước uống",
+                    "Do vi sinh vật ở dạ cỏ nhân lên mạnh mẽ, sau đó bị tiêu hóa ở dạ múi khế thành nguồn protein cho bò",
+                    "Cỏ tươi chứa hàm lượng protein cao sẵn mà con người không nhận ra",
+                    "Bò hấp thụ protein trực tiếp qua lớp niêm mạc khoang miệng khi nhai"
+                ],
+                correct: 1,
+                caption: "Bò ăn cỏ và hệ vi sinh vật",
+                explanation: "Vi sinh vật ở dạ cỏ tiêu hóa cellulose và nhân lên vô số. Khi xuống dạ múi khế (dạ dày chính thức), chính xác các vi sinh vật này bị tiêu hóa thành nguồn protein dồi dào cho bò!",
+                // SVG CON BÒ AN CỎ
+                svg: `
+                <svg viewBox="0 0 200 160" class="w-full h-full">
+                    <ellipse cx="100" cy="135" rx="80" ry="15" fill="#bbf7d0"/>
+                    <ellipse cx="100" cy="95" rx="55" ry="35" fill="#ffffff" stroke="#cbd5e1" stroke-width="3"/>
+                    <path d="M 70 75 Q 85 70, 80 90 Z" fill="#1e293b"/>
+                    <path d="M 115 80 Q 130 85, 120 105 Z" fill="#1e293b"/>
+                    <rect x="65" y="115" width="10" height="25" rx="4" fill="#cbd5e1"/>
+                    <rect x="85" y="115" width="10" height="25" rx="4" fill="#cbd5e1"/>
+                    <rect x="105" y="115" width="10" height="25" rx="4" fill="#cbd5e1"/>
+                    <rect x="125" y="115" width="10" height="25" rx="4" fill="#cbd5e1"/>
+                    <g transform="translate(125, 45)">
+                        <path d="M 10 20 Q 5 5, 20 10 Z" fill="#f59e0b"/>
+                        <ellipse cx="25" cy="30" rx="22" ry="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+                        <circle cx="20" cy="25" r="3" fill="#0f172a" class="animate-blink"/>
+                        <ellipse cx="32" cy="35" rx="12" ry="9" fill="#fbcfe8"/>
+                    </g>
+                    <path d="M 46 90 Q 30 100, 35 115" stroke="#cbd5e1" stroke-width="3" fill="none" class="animate-wiggle"/>
+                </svg>
+                `
+            },
+            {
+                id: 2,
+                question: "2. Đặc điểm thích nghi nổi bật nhất của ống tiêu hóa ở thú ăn thịt (chó, mèo) so với thú ăn thực vật là gì?",
+                options: [
+                    "Ruột rất dài và manh tràng cực kỳ phát triển",
+                    "Dạ dày 4 ngăn phức tạp để nhai lại",
+                    "Ruột tương đối ngắn, dạ dày đơn lớn chứa thức ăn giàu đạm dễ tiêu hóa",
+                    "Không có dạ dày chính thức mà chỉ có túi tiêu hóa"
+                ],
+                correct: 2,
+                caption: "Thú ăn thịt với ống tiêu hóa thích nghi",
+                explanation: "Thịt là thức ăn giàu dinh dưỡng và dễ tiêu hóa hơn chất xơ nhiều, do đó thú ăn thịt có dạ dày đơn lớn để chứa mồi và ruột ngắn hơn nhiều so với thú ăn cỏ!",
+                // SVG CON CHÓ
+                svg: `
+                <svg viewBox="0 0 200 160" class="w-full h-full">
+                    <ellipse cx="100" cy="135" rx="70" ry="12" fill="#e2e8f0"/>
+                    <ellipse cx="90" cy="95" rx="40" ry="28" fill="#f97316"/>
+                    <rect x="65" y="110" width="10" height="22" rx="4" fill="#ea580c"/>
+                    <rect x="80" y="110" width="10" height="22" rx="4" fill="#ea580c"/>
+                    <rect x="100" y="110" width="10" height="22" rx="4" fill="#ea580c"/>
+                    <rect x="115" y="110" width="10" height="22" rx="4" fill="#ea580c"/>
+                    <circle cx="125" cy="65" r="24" fill="#f97316"/>
+                    <path d="M 110 45 Q 95 60, 110 75 Z" fill="#c2410c"/>
+                    <ellipse cx="140" cy="70" rx="12" ry="8" fill="#ffedd5"/>
+                    <circle cx="146" cy="67" r="3.5" fill="#0f172a"/>
+                    <circle cx="128" cy="60" r="3.5" fill="#0f172a" class="animate-blink"/>
+                    <path d="M 52 90 Q 35 75, 45 60" stroke="#f97316" stroke-width="5" stroke-linecap="round" fill="none" class="animate-wiggle"/>
+                </svg>
+                `
+            },
+            {
+                id: 3,
+                question: "3. Trong chăn nuôi, người ta thường thấy gà nhổ ăn các hạt sỏi nhỏ. Việc nuốt sỏi này có ý nghĩa sinh học quan trọng nào?",
+                options: [
+                    "Cung cấp chất khoáng kiềm cho dạ dày tuyến",
+                    "Giúp dạ dày cơ (mề) tăng cường hiệu quả co bóp để nghiền nát hạt cứng",
+                    "Làm sạch lớp niêm mạc thực quản và diều",
+                    "Tăng cường tiết enzyme amylase tiêu hóa tinh bột"
+                ],
+                correct: 1,
+                caption: "Loài chim & gà ăn hạt",
+                explanation: "Gà không có răng để nhai. Sỏi tích tụ trong dạ dày cơ (mề) đóng vai trò như các 'viên răng' hỗ trợ lực co bóp cơ học nghiền nát hạt ngũ cốc cứng!",
+                // SVG CON GÀ
+                svg: `
+                <svg viewBox="0 0 200 160" class="w-full h-full">
+                    <ellipse cx="100" cy="135" rx="60" ry="10" fill="#fef08a"/>
+                    <ellipse cx="100" cy="90" rx="35" ry="30" fill="#facc15"/>
+                    <circle cx="125" cy="60" r="16" fill="#facc15"/>
+                    <path d="M 120 45 Q 125 35, 130 45 Q 135 38, 138 48 Z" fill="#ef4444"/>
+                    <polygon points="138,58 152,62 138,67" fill="#f97316"/>
+                    <circle cx="130" cy="56" r="2.5" fill="#0f172a" class="animate-blink"/>
+                    <path d="M 85 85 Q 105 80, 100 102 Z" fill="#eab308"/>
+                    <path d="M 68 85 Q 50 65, 65 75 Q 48 78, 65 92 Z" fill="#f97316" class="animate-wiggle"/>
+                    <path d="M 92 118 L 92 132 M 92 132 L 85 136 M 92 132 L 98 136" stroke="#f97316" stroke-width="2.5" stroke-linecap="round"/>
+                    <path d="M 108 118 L 108 132 M 108 132 L 101 136 M 108 132 L 114 136" stroke="#f97316" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+                `
+            },
+            {
+                id: 4,
+                question: "4. Thỏ và ngựa đều là động vật ăn thực vật nhưng có dạ dày đơn. Cơ quan nào của chúng đóng vai trò tương tự dạ cỏ của bò để lên men cellulose?",
+                options: [
+                    "Dạ dày tuyến",
+                    "Manh tràng (Ruột tịt) rất phát triển",
+                    "Mề (Dạ dày cơ)",
+                    "Kết tràng ngắn"
+                ],
+                correct: 1,
+                caption: "Thỏ ăn thực vật dạ dày đơn",
+                explanation: "Ở thú ăn thực vật dạ dày đơn như thỏ hay ngựa, manh tràng (ruột tịt) cực kỳ lớn và chứa hệ vi sinh vật lên men cellulose giống như chức năng của dạ cỏ ở bò!",
+                // SVG CON THỎ
+                svg: `
+                <svg viewBox="0 0 200 160" class="w-full h-full">
+                    <ellipse cx="100" cy="135" rx="65" ry="12" fill="#dcfce7"/>
+                    <ellipse cx="85" cy="98" rx="35" ry="25" fill="#94a3b8"/>
+                    <circle cx="120" cy="75" r="20" fill="#94a3b8"/>
+                    <g class="animate-wiggle">
+                        <ellipse cx="112" cy="38" rx="6" ry="22" fill="#94a3b8"/>
+                        <ellipse cx="112" cy="38" rx="3.5" ry="16" fill="#f472b6"/>
+                        <ellipse cx="125" cy="40" rx="6" ry="20" fill="#94a3b8"/>
+                        <ellipse cx="125" cy="40" rx="3.5" ry="14" fill="#f472b6"/>
+                    </g>
+                    <circle cx="128" cy="70" r="3" fill="#0f172a" class="animate-blink"/>
+                    <polygon points="137,74 141,77 137,80" fill="#f472b6"/>
+                    <circle cx="48" cy="95" r="9" fill="#f1f5f9"/>
+                    <polygon points="148,125 165,115 152,110" fill="#f97316"/>
+                    <path d="M 165 115 L 172 112 M 165 115 L 170 118" stroke="#22c55e" stroke-width="2"/>
+                </svg>
+                `
+            },
+            {
+                id: 5,
+                question: "5. Ở động vật nhai lại (trâu, bò), đường đi chính xác của thức ăn khi bắt đầu ăn cỏ đến khi kết thúc quá trình nhai lại là gì?",
+                options: [
+                    "Cỏ -> Dạ cỏ -> Dạ tổ ong -> Ợ lên miệng nhai lại -> Dạ lá sách -> Dạ múi khế",
+                    "Cỏ -> Dạ tổ ong -> Dạ cỏ -> Dạ lá sách -> Ợ lên miệng nhai lại -> Dạ múi khế",
+                    "Cỏ -> Dạ múi khế -> Ợ lên miệng nhai lại -> Dạ cỏ -> Dạ lá sách -> Dạ tổ ong",
+                    "Cỏ -> Dạ lá sách -> Dạ cỏ -> Ợ lên miệng nhai lại -> Dạ múi khế -> Dạ tổ ong"
+                ],
+                correct: 0,
+                caption: "Tập tính nhai lại ở động vật",
+                explanation: "Thức ăn vào Dạ cỏ lên men sơ bộ $\\rightarrow$ chuyển qua Dạ tổ ong $\\rightarrow$ ợ lên miệng nhai lại $\\rightarrow$ nuốt xuống Dạ lá sách (hấp thụ nước) $\\rightarrow$ Dạ múi khế (tiêu hóa hóa học)!",
+                // SVG TRÂU BÒ NGHỈ NGƠI
+                svg: `
+                <svg viewBox="0 0 200 160" class="w-full h-full">
+                    <ellipse cx="100" cy="130" rx="75" ry="15" fill="#fef3c7"/>
+                    <ellipse cx="95" cy="105" rx="50" ry="25" fill="#475569"/>
+                    <circle cx="140" cy="90" r="18" fill="#475569"/>
+                    <path d="M 132 76 Q 120 60, 142 68 Z" fill="#f59e0b"/>
+                    <path d="M 142 88 Q 147 93, 152 88" stroke="#ffffff" stroke-width="2.5" fill="none"/>
+                    <ellipse cx="152" cy="96" rx="9" ry="7" fill="#cbd5e1"/>
+                    <circle cx="158" cy="98" r="2" fill="#22c55e" class="animate-bounce"/>
+                </svg>
+                `
+            },
+            {
+                id: 6,
+                badge: "Mở rộng: Con Người 🙋‍♂️",
+                question: "6. Nguyên nhân cốt lõi khiến ruột non ở con người trở thành cơ quan hấp thụ chất dinh dưỡng hiệu quả nhất là gì?",
+                options: [
+                    "Nhờ ruột non là cơ quan duy nhất có chứa enzyme tiêu hóa",
+                    "Nhờ cấu trúc có nếp gấp niêm mạc, lông ruột và vi lông ruột giúp tăng diện tích bề mặt tiếp xúc lên hàng trăm lần",
+                    "Do ruột non có độ pH kiềm cao nhất trong cơ thể",
+                    "Do ruột non co bóp cơ học mạnh hơn dạ dày nhiều lần"
+                ],
+                correct: 1,
+                caption: "Khả năng hấp thụ vượt trội ở người",
+                explanation: "Hệ thống nếp gấp niêm mạc, lông ruột và vi lông ruột cực kỳ dày đặc làm tăng diện tích tiếp xúc của ruột non lên tới $200 - 300 m^2$, tối đa hóa khả năng hấp thụ dinh dưỡng vào máu!",
+                // SVG CON NGƯỜI KHỎE MẠNH
+                svg: `
+                <svg viewBox="0 0 200 160" class="w-full h-full">
+                    <ellipse cx="100" cy="140" rx="60" ry="10" fill="#e0f2fe"/>
+                    <circle cx="45" cy="45" r="4" fill="#f59e0b" class="animate-pulse-glow"/>
+                    <circle cx="155" cy="50" r="5" fill="#38bdf8" class="animate-pulse-glow"/>
+                    <g transform="translate(60, 20)">
+                        <path d="M 25 35 C 20 15, 60 15, 55 35 Z" fill="#1e293b"/>
+                        <circle cx="40" cy="40" r="20" fill="#fed7aa"/>
+                        <circle cx="33" cy="38" r="2.5" fill="#0f172a" class="animate-blink"/>
+                        <circle cx="47" cy="38" r="2.5" fill="#0f172a" class="animate-blink"/>
+                        <path d="M 33 46 Q 40 53, 47 46" stroke="#ea580c" stroke-width="2" fill="none"/>
+                        <path d="M 20 62 L 60 62 L 65 105 L 15 105 Z" fill="#0284c7"/>
+                        <path d="M 40 75 Q 35 68, 30 73 Q 25 80, 40 90 Q 55 80, 50 73 Q 45 68, 40 75 Z" fill="#ef4444" class="animate-bounce"/>
+                    </g>
+                </svg>
+                `
+            },
+            {
+                id: 7,
+                badge: "Mở rộng: Con Người 🙋‍♀️",
+                question: "7. Nếu một người mắc bệnh viêm gan hoặc tắc ống dẫn mật, khả năng tiêu hóa nhóm chất nào trong khẩu phần ăn sẽ bị suy giảm nghiêm trọng nhất?",
+                options: [
+                    "Protein (Chất đạm)",
+                    "Lipid (Chất béo) - vì mật có vai trò nhũ tương hóa béo",
+                    "Carbohydrate (Tinh bột)",
+                    "Vitamin tan trong nước"
+                ],
+                correct: 1,
+                caption: "Tiêu hóa hóa học & Chức năng mật",
+                explanation: "Mật do gan tiết ra chứa muối mật có tác dụng nhũ tương hóa lipid (xé nhỏ giọt mỡ), tạo điều kiện cho enzyme lipase thủy phân lipid. Thiếu mật làm mỡ không thể tiêu hóa hiệu quả!",
+                // SVG HỆ TIÊU HÓA HOẠT HÌNH
+                svg: `
+                <svg viewBox="0 0 200 160" class="w-full h-full">
+                    <ellipse cx="100" cy="140" rx="65" ry="12" fill="#fef3c7"/>
+                    <g transform="translate(65, 20)">
+                        <path d="M 15 35 C 10 10, 60 10, 55 35 C 65 50, 5 50, 15 35 Z" fill="#fb923c"/>
+                        <circle cx="35" cy="40" r="18" fill="#fed7aa"/>
+                        <circle cx="28" cy="38" r="2.5" fill="#0f172a" class="animate-blink"/>
+                        <path d="M 39 38 Q 42 35, 45 38" stroke="#0f172a" stroke-width="2" fill="none"/>
+                        <path d="M 30 46 Q 36 54, 42 46 Z" fill="#e11d48"/>
+                        <path d="M 18 58 L 52 58 L 56 100 L 14 100 Z" fill="#10b981"/>
+                        <circle cx="58" cy="70" r="10" fill="#ef4444"/>
+                        <path d="M 58 60 L 60 55" stroke="#15803d" stroke-width="2"/>
+                    </g>
+                </svg>
+                `
+            }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let isAnsweredCorrectly = false;
+
+        function startGame() {
+            startBGM();
+            document.getElementById('introScreen').classList.add('hidden');
+            document.getElementById('quizScreen').classList.remove('hidden');
+            document.getElementById('quizScreen').classList.add('flex');
+            startTimer();
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            isAnsweredCorrectly = false;
+            const q = quizData[currentIdx];
+
+            document.getElementById('currentQNum').innerText = currentIdx + 1;
+            document.getElementById('progressBar').style.width = ((currentIdx + 1) / quizData.length * 100) + '%';
+            document.getElementById('scoreText').innerText = score;
+
+            document.getElementById('svgContainer').innerHTML = q.svg;
+            document.getElementById('svgCaption').innerText = q.caption;
+            document.getElementById('questionText').innerText = q.question;
+
+            const levelBadge = document.getElementById('levelBadge');
+            if (q.badge) {
+                levelBadge.innerText = q.badge;
+                levelBadge.className = 'inline-block px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-sky-800 bg-sky-100 rounded-lg border border-sky-300 mb-2';
+            } else {
+                levelBadge.innerText = 'Mức Độ Khá • THPT 💡';
+                levelBadge.className = 'inline-block px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-100 rounded-lg border border-emerald-300 mb-2';
+            }
+
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+
+            const optionLabels = ['A', 'B', 'C', 'D'];
+
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = `option-btn w-full p-3 rounded-xl border-2 border-slate-200 bg-white text-left text-xs md:text-sm text-slate-700 font-bold flex items-center gap-3 cursor-pointer shadow-sm`;
+                btn.onclick = () => checkAnswer(index, btn);
+
+                btn.innerHTML = `
+                    <span class="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 font-extrabold flex items-center justify-center text-xs shrink-0 border border-sky-200">
+                        ${optionLabels[index]}
+                    </span>
+                    <span class="flex-1 leading-snug">${opt}</span>
+                    <span class="status-icon text-base hidden"></span>
+                `;
+                optionsContainer.appendChild(btn);
+            });
+
+            resetFeedback();
+        }
+
+        function resetFeedback() {
+            const feedbackBox = document.getElementById('feedbackBox');
+            feedbackBox.className = 'p-3.5 md:p-4 rounded-2xl bg-slate-50 border border-slate-200 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3';
+            
+            document.getElementById('feedbackIcon').className = 'w-10 h-10 rounded-xl flex items-center justify-center text-lg text-slate-500 bg-slate-200 shrink-0 mt-0.5 sm:mt-0 shadow-sm';
+            document.getElementById('feedbackIcon').innerHTML = '<i class="fa-solid fa-lightbulb"></i>';
+            
+            document.getElementById('feedbackTitle').className = 'font-extrabold text-sm text-slate-700';
+            document.getElementById('feedbackTitle').innerText = 'Chọn 1 đáp án đúng để mở nút tiếp tục!';
+            
+            document.getElementById('feedbackDesc').innerText = 'Hãy vận dụng kiến thức Sinh 11 để suy luận câu trả lời đúng nhé.';
+
+            const nextBtn = document.getElementById('nextBtn');
+            nextBtn.disabled = true;
+            nextBtn.className = 'w-full sm:w-auto px-6 py-2.5 bg-slate-200 text-slate-400 font-black text-sm rounded-xl transition-all flex items-center justify-center gap-2 cursor-not-allowed shrink-0 border border-slate-300';
+        }
+
+        function checkAnswer(chosenIndex, btnElement) {
+            if (isAnsweredCorrectly) return;
+
+            const q = quizData[currentIdx];
+            const allBtns = document.querySelectorAll('.option-btn');
+
+            if (chosenIndex === q.correct) {
+                // CORRECT
+                isAnsweredCorrectly = true;
+                score += 100;
+                document.getElementById('scoreText').innerText = score;
+
+                btnElement.className = 'option-btn w-full p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-900 font-black flex items-center gap-3 shadow-md shadow-emerald-500/10';
+                btnElement.querySelector('.status-icon').classList.remove('hidden');
+                btnElement.querySelector('.status-icon').innerHTML = '<i class="fa-solid fa-circle-check text-emerald-600"></i>';
+                btnElement.querySelector('span').className = 'w-7 h-7 rounded-lg bg-emerald-500 text-white font-black flex items-center justify-center text-xs shrink-0';
+
+                allBtns.forEach(b => {
+                    if (b !== btnElement) {
+                        b.disabled = true;
+                        b.classList.add('opacity-50');
+                    }
+                });
+
+                playSFX('correct');
+
+                const feedbackBox = document.getElementById('feedbackBox');
+                feedbackBox.className = 'p-3.5 md:p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-300 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm';
+
+                const fbIcon = document.getElementById('feedbackIcon');
+                fbIcon.className = 'w-10 h-10 rounded-xl flex items-center justify-center text-lg text-white bg-emerald-500 font-bold shrink-0 mt-0.5 sm:mt-0 shadow-md';
+                fbIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
+
+                document.getElementById('feedbackTitle').className = 'font-black text-sm text-emerald-800';
+                document.getElementById('feedbackTitle').innerText = 'Chính xác! Suy luận rất tốt!';
+                document.getElementById('feedbackDesc').innerText = q.explanation;
+
+                const nextBtn = document.getElementById('nextBtn');
+                nextBtn.disabled = false;
+                nextBtn.className = 'w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black text-sm rounded-xl shadow-lg shadow-emerald-500/30 transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0';
+
+            } else {
+                // WRONG
+                playSFX('wrong');
+
+                btnElement.classList.add('shake-err', 'border-rose-400', 'bg-rose-50', 'text-rose-800');
+                setTimeout(() => {
+                    btnElement.classList.remove('shake-err');
+                }, 450);
+
+                const feedbackBox = document.getElementById('feedbackBox');
+                feedbackBox.className = 'p-3.5 md:p-4 rounded-2xl bg-rose-50 border-2 border-rose-200 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3';
+
+                const fbIcon = document.getElementById('feedbackIcon');
+                fbIcon.className = 'w-10 h-10 rounded-xl flex items-center justify-center text-lg text-white bg-rose-500 shrink-0 mt-0.5 sm:mt-0 shadow-sm';
+                fbIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+
+                document.getElementById('feedbackTitle').className = 'font-black text-sm text-rose-700';
+                document.getElementById('feedbackTitle').innerText = 'Chưa đúng rồi! Hãy thử lại nào!';
+                document.getElementById('feedbackDesc').innerText = 'Đừng lo lắng, hãy phân tích kỹ yêu cầu và chọn phương án khác nhé!';
+            }
+        }
+
+        function nextQuestion() {
+            if (!isAnsweredCorrectly) return;
+
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                loadQuestion();
+            } else {
+                showWinScreen();
+            }
+        }
+
+        function showWinScreen() {
+            stopTimer();
+            playSFX('win');
+
+            document.getElementById('finalTimeText').innerText = document.getElementById('timerText').innerText;
+            document.getElementById('winScreen').classList.remove('hidden');
+
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 180,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+                setTimeout(() => {
+                    confetti({ particleCount: 120, angle: 60, spread: 60, origin: { x: 0 } });
+                    confetti({ particleCount: 120, angle: 120, spread: 60, origin: { x: 1 } });
+                }, 300);
+            }
+        }
+
+        function restartQuiz() {
+            currentIdx = 0;
+            score = 0;
+            document.getElementById('winScreen').classList.add('hidden');
+            document.getElementById('quizScreen').classList.add('hidden');
+            document.getElementById('introScreen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
